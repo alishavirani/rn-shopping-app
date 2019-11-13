@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { IButton, Platform, FlatList, Alert } from "react-native";
+import { View, Text, Button, Platform, FlatList, Alert } from "react-native";
 import { HeaderButtons, Item } from "react-navigation-header-buttons";
 
 import HeaderButton from "../../components/UI/HeaderButon";
@@ -9,6 +9,8 @@ import Colors from "../../constants/Colors";
 import * as productsAction from "../../store/actions/products";
 
 const UserProductsScreen = props => {
+  const [error, setError] = useState();
+
   const userProducts = useSelector(state => state.products.userProducts);
   const dispatch = useDispatch();
 
@@ -16,19 +18,37 @@ const UserProductsScreen = props => {
     props.navigation.navigate("EditProduct", { productId: id });
   };
 
+  useEffect(() => {
+    if (error) {
+      Alert.alert("An error occured!", error, [{ text: "Okay" }]);
+    }
+  }, [error]);
+
   const deleteHandler = id => {
-    Alert.alert("Are you sure?", " Do you really want to delete this item?", [
-      { text: "No", style: "default" },
-      {
-        text: "Yes",
-        style: "destructive",
-        onPress: () => {
-          dispatch(productsAction.deleteProduct(id));
+    try {
+      Alert.alert("Are you sure?", " Do you really want to delete this item?", [
+        { text: "No", style: "default" },
+        {
+          text: "Yes",
+          style: "destructive",
+          onPress: async () => {
+            await dispatch(productsAction.deleteProduct(id));
+            setError(null);
+          }
         }
-      }
-    ]);
+      ]);
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
+  if (userProducts.length === 0) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>No products found, maybe start creating some?</Text>
+      </View>
+    );
+  }
   return (
     <FlatList
       data={userProducts}
